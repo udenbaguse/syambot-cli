@@ -1,20 +1,39 @@
 import readline from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
+import { cwd, stdin as input, stdout as output } from "node:process";
 import { readConfig, writeConfig, CONFIG_PATH } from "./config.js";
 import { appendSessionMessage, loadSessionMessages, resolveSessionFile } from "./history.js";
 import { createPuterClient } from "./providers/puter.js";
+import { runFsCommand } from "./fs-crud.js";
+import { buildProjectContext, buildProjectTree } from "./project-context.js";
+import { applyAiActions, buildApplyInstruction } from "./ai-apply.js";
+import { withSpinner } from "./spinner.js";
 
 function printHelp() {
   console.log(`
 syambot - terminal AI assistant
 
 Usage:
-  syambot ask "<prompt>" [--model <name>] [--stream] [--session <id>]
+  syambot ask "<prompt>" [--model <name>] [--stream] [--session <id>] [--project] [--apply]
   syambot chat [--model <name>] [--session <id>]
   syambot login
   syambot config show
   syambot config set-model <model>
+  syambot fs <command> [...args]
   syambot help
+
+AI Coding Mode:
+  --project   Sertakan konteks project saat ini (tree + snippet file)
+  --apply     Terapkan perubahan file/command dari blok output AI
+
+File/Folder CRUD:
+  syambot fs create-file <path> <content>
+  syambot fs read-file <path>
+  syambot fs update-file <path> <content>
+  syambot fs delete-file <path>
+  syambot fs create-folder <path>
+  syambot fs list-folder [path]
+  syambot fs delete-folder <path> --recursive
+  syambot fs rename <from> <to>
 
 Environment:
   PUTER_AUTH_TOKEN   Optional token for Puter auth.
@@ -22,13 +41,19 @@ Environment:
 }
 
 function parseArgs(argv) {
-  const flags = { stream: false };
+  const flags = { stream: false, recursive: false, project: false, apply: false };
   const positionals = [];
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--stream") {
       flags.stream = true;
+    } else if (arg === "--recursive" || arg === "-r") {
+      flags.recursive = true;
+    } else if (arg === "--project") {
+      flags.project = true;
+    } else if (arg === "--apply") {
+      flags.apply = true;
     } else if (arg === "--model") {
       flags.model = argv[i + 1];
       i++;
@@ -65,25 +90,75 @@ async function appendSessionTurn(sessionId, model, prompt, answer) {
   await appendSessionMessage(sessionId, "assistant", answer, meta);
 }
 
+async function buildAskPrompt(userPrompt, flags) {
+  if (!flags.project && !flags.apply) return userPrompt;
+
+  const chunks = [userPrompt];
+
+  if (flags.project) {
+    const context = await withSpinner("Membaca project", () => buildProjectContext(cwd()));
+    chunks.push("Gunakan konteks project berikut untuk membuat jawaban/coding yang relevan:");
+    chunks.push(context);
+  }
+
+  if (flags.apply) {
+    chunks.push(buildApplyInstruction());
+  }
+
+  return chunks.join("\n\n");
+}
+
+function buildChatAgentPrompt(userPrompt, projectTree) {
+  return [
+    userPrompt,
+    "",
+    "Konteks direktori project saat ini:",
+    projectTree,
+    "",
+    "Jika user meminta perubahan project, balas ringkas + sertakan blok aksi yang bisa dieksekusi.",
+    buildApplyInstruction()
+  ].join("\n");
+}
+
 async function runAsk(positionals, flags, config) {
-  const prompt = positionals.slice(1).join(" ").trim();
-  if (!prompt) {
+  const userPrompt = positionals.slice(1).join(" ").trim();
+  if (!userPrompt) {
     throw new Error("Prompt wajib diisi. Contoh: syambot ask \"buatkan ide konten\"");
+  }
+
+  if (flags.apply && flags.stream) {
+    throw new Error("--apply tidak bisa dipakai bersamaan dengan --stream.");
   }
 
   const model = resolveModel(flags, config);
   const client = await createPuterClient(config.puterAuthToken);
+  const finalPrompt = await buildAskPrompt(userPrompt, flags);
 
   const history = flags.session ? await loadSessionMessages(flags.session) : [];
-  const messages = [...history, { role: "user", content: prompt }];
+  const messages = [...history, { role: "user", content: finalPrompt }];
 
-  const answer = await client.ask({ prompt, messages, model, stream: flags.stream });
+  const answer = flags.stream
+    ? await client.ask({ prompt: finalPrompt, messages, model, stream: true })
+    : await withSpinner("Syambot sedang berpikir", () =>
+      client.ask({ prompt: finalPrompt, messages, model, stream: false }));
   if (!flags.stream) {
     console.log(answer);
   }
 
+  if (flags.apply) {
+    const result = await applyAiActions(answer, { executeCommands: true, cwdPath: cwd() });
+    if (result.applied.length === 0) {
+      console.log("\n[APPLY] Tidak ada blok aksi yang bisa diterapkan.");
+    } else {
+      console.log("\n[APPLY] Perubahan diterapkan:");
+      for (const item of result.applied) {
+        console.log(`- ${item}`);
+      }
+    }
+  }
+
   await maybePersistPuterToken(config, client);
-  await appendSessionTurn(flags.session, model, prompt, answer);
+  await appendSessionTurn(flags.session, model, userPrompt, answer);
 }
 
 async function runChat(flags, config) {
@@ -99,17 +174,31 @@ async function runChat(flags, config) {
   await maybePersistPuterToken(config, client);
 
   const messages = flags.session ? await loadSessionMessages(flags.session) : [];
+  let projectTree = await withSpinner("Membaca direktori project", () =>
+    buildProjectTree(cwd(), { maxFiles: 160 }));
 
   while (true) {
     const q = (await rl.question("you> ")).trim();
     if (!q) continue;
     if (isExitCommand(q)) break;
 
-    const turnMessages = [...messages, { role: "user", content: q }];
+    const promptWithContext = buildChatAgentPrompt(q, projectTree);
+    const turnMessages = [...messages, { role: "user", content: promptWithContext }];
 
     try {
-      const answer = await client.ask({ prompt: q, messages: turnMessages, model, stream: false });
+      const answer = await withSpinner("Syambot sedang berpikir", () =>
+        client.ask({ prompt: promptWithContext, messages: turnMessages, model, stream: false }));
       console.log(`bot> ${answer}`);
+
+      const applied = await applyAiActions(answer, { executeCommands: true, cwdPath: cwd() });
+      if (applied.applied.length > 0) {
+        console.log("[APPLY] Aksi dijalankan:");
+        for (const item of applied.applied) {
+          console.log(`- ${item}`);
+        }
+        projectTree = await withSpinner("Refresh direktori project", () =>
+          buildProjectTree(cwd(), { maxFiles: 160 }));
+      }
 
       messages.push({ role: "user", content: q });
       messages.push({ role: "assistant", content: answer });
@@ -123,7 +212,7 @@ async function runChat(flags, config) {
 }
 
 async function runLogin(config) {
-  const client = await createPuterClient(config.puterAuthToken);
+  const client = await withSpinner("Login ke Puter", () => createPuterClient(config.puterAuthToken));
   await writeConfig({ ...config, puterAuthToken: client.token });
   console.log("Login berhasil. Token Puter tersimpan di config lokal.");
 }
@@ -176,6 +265,11 @@ async function main() {
 
   if (cmd === "config") {
     await runConfig(positionals, config);
+    return;
+  }
+
+  if (cmd === "fs") {
+    await runFsCommand(positionals, flags);
     return;
   }
 
