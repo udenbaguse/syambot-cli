@@ -113,5 +113,3 @@ npm run release:minor
 # atau
 npm run release:major
 ```
-git push origin main
-```
