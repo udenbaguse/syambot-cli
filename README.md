@@ -5,7 +5,8 @@ AI assistant berbasis terminal yang bisa dijalankan langsung dari command line.
 ## Install
 
 ```bash
-npm i -g syambot-cli
+npm i -g github:udenbaguse/syambot-cli
+syambot help
 ```
 
 ## Usage
