@@ -1,7 +1,7 @@
 {
   "name": "syambot-cli",
   "version": "1.0.0",
-  "description": "",
+  "description": "Terminal AI assistant CLI",
   "homepage": "https://github.com/udenbaguse/syambot-cli#readme",
   "bugs": {
     "url": "https://github.com/udenbaguse/syambot-cli/issues"
@@ -13,8 +13,43 @@
   "license": "ISC",
   "author": "Muhamad Syamsudin (Udenbaguse)",
   "type": "module",
-  "main": "index.js",
+  "main": "src/cli.js",
+  "bin": {
+    "syambot": "bin/syambot.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "cli",
+    "terminal",
+    "ai",
+    "assistant",
+    "syambot"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./bin/syambot.js",
+    "bot": "node ./bin/syambot.js",
+    "ask": "node ./bin/syambot.js ask",
+    "chat": "node ./bin/syambot.js chat",
+    "login": "node ./bin/syambot.js login",
+    "check": "node --check src/cli.js && node --check src/config.js && node --check src/history.js && node --check src/providers/puter.js",
+    "release:patch": "npm run check && npm version patch -m \"chore(release): %s\"",
+    "release:minor": "npm run check && npm version minor -m \"chore(release): %s\"",
+    "release:major": "npm run check && npm version major -m \"chore(release): %s\"",
+    "prepublishOnly": "npm run check"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@heyputer/puter.js": "^2.2.10"
   }
 }
