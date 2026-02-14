@@ -8,6 +8,8 @@ import { buildProjectContext, buildProjectTree } from "./project-context.js";
 import { applyAiActions, buildApplyInstruction } from "./ai-apply.js";
 import { withSpinner } from "./spinner.js";
 
+const SUPPORTED_MODELS = ["gpt-5-nano", "gpt-5.1-codex", "gpt-5.1-codex-max"];
+
 function printHelp() {
   console.log(`
 syambot - terminal AI assistant
@@ -18,6 +20,7 @@ Usage:
   syambot login
   syambot config show
   syambot config set-model <model>
+  syambot config list-models
   syambot fs <command> [...args]
   syambot help
 
@@ -37,6 +40,9 @@ File/Folder CRUD:
 
 Environment:
   PUTER_AUTH_TOKEN   Optional token for Puter auth.
+
+Supported models:
+  ${SUPPORTED_MODELS.join(", ")}
 `);
 }
 
@@ -69,7 +75,13 @@ function parseArgs(argv) {
 }
 
 function resolveModel(flags, config) {
-  return flags.model || config.model || "gpt-5-nano";
+  const model = flags.model || config.model || "gpt-5-nano";
+  if (!SUPPORTED_MODELS.includes(model)) {
+    throw new Error(
+      `Model '${model}' belum didukung. Pilih salah satu: ${SUPPORTED_MODELS.join(", ")}`
+    );
+  }
+  return model;
 }
 
 function isExitCommand(inputText) {
@@ -228,14 +240,25 @@ async function runConfig(positionals, config) {
 
   if (sub === "set-model") {
     const model = positionals[2];
-    if (!model) throw new Error("Model wajib diisi. Contoh: syambot config set-model gpt-5-nano");
+    if (!model) throw new Error("Model wajib diisi. Contoh: syambot config set-model gpt-5.1-codex");
+    if (!SUPPORTED_MODELS.includes(model)) {
+      throw new Error(`Model tidak valid. Pilih salah satu: ${SUPPORTED_MODELS.join(", ")}`);
+    }
     const next = { ...config, model };
     await writeConfig(next);
     console.log(`Default model diset ke: ${model}`);
     return;
   }
 
-  throw new Error("Perintah config tidak dikenali. Gunakan: show | set-model");
+  if (sub === "list-models") {
+    console.log("Model yang tersedia:");
+    for (const item of SUPPORTED_MODELS) {
+      console.log(`- ${item}`);
+    }
+    return;
+  }
+
+  throw new Error("Perintah config tidak dikenali. Gunakan: show | set-model | list-models");
 }
 
 async function main() {

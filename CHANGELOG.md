@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.0] - 2026-02-14
 
 ### Added
 
@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file.
   - auto-read current project directory tree during `syambot chat`
   - auto-apply AI action blocks for files/folders/allowed commands
 - Loading spinner feedback while waiting for AI/network operations.
+- Additional model support:
+  - `gpt-5.1-codex`
+  - `gpt-5.1-codex-max`
+- New command: `syambot config list-models`.
 
 ### Changed
 

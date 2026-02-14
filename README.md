@@ -17,7 +17,15 @@ syambot login
 syambot ask "Buatkan ide konten TikTok tentang AI"
 syambot chat
 syambot config show
+syambot config list-models
+syambot config set-model gpt-5.1-codex
 ```
+
+Model yang tersedia:
+
+- `gpt-5-nano`
+- `gpt-5.1-codex`
+- `gpt-5.1-codex-max`
 
 ## AI Coding Mode (Read Project + Apply)
 
@@ -112,23 +120,3 @@ npm run release:minor
 npm run release:major
 ```
 
-3. Push commit + tag:
-
-```bash
-git push origin main --follow-tags
-```
-
-4. Publish ke npm:
-
-```bash
-npm whoami
-npm publish --access public
-```
-
-## Upload ke GitHub
-
-```bash
-git add .
-git commit -m "chore: prepare release"
-git push origin main
-```
