@@ -4,13 +4,16 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const CONFIG_PATH = join(homedir(), ".syambot", "config.json");
 const DEFAULT_CONFIG = {
-  model: "gpt-5-nano"
+  model: "gemma4:e2b"
 };
 
 function sanitizeConfig(parsed) {
   return {
     model: typeof parsed?.model === "string" && parsed.model.trim() ? parsed.model : DEFAULT_CONFIG.model,
-    puterAuthToken: typeof parsed?.puterAuthToken === "string" ? parsed.puterAuthToken : undefined
+    ollamaBaseUrl:
+      typeof parsed?.ollamaBaseUrl === "string" && parsed.ollamaBaseUrl.trim()
+        ? parsed.ollamaBaseUrl
+        : undefined
   };
 }
 

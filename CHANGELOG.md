@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-04-20
+
+### Added
+
+- Ollama local provider integration (default base URL `http://127.0.0.1:11434`).
+- Default model switched to `gemma4:e2b`.
+- New Ollama model discovery via `syambot config list-models`.
+- CLI UX upgrades:
+  - `commander` command parser + aliases (`a`, `c`, `cfg`, `file`)
+  - colored output via `chalk`
+  - boxed hero/help UI via `boxen`
+- Chat thinking trace support:
+  - real-time thinking stream (when model provides it)
+  - thinking duration summary
+  - `/think` command to reopen last thinking log
+- Auto-apply fallback for agentic edits:
+  - when model returns plain text (without action blocks), Syambot retries with a strict action-format conversion pass.
+- Target-file suggestion in chat prompts to improve file selection for coding tasks.
+- New `chat` option: `--strict-agent` (only shows final assistant answer when file changes are actually applied).
+
+### Changed
+
+- Removed Puter-based auth/login flow and migrated runtime to local Ollama.
+- Help/usage and README examples updated for Ollama-first workflow.
+- `ask --apply` and `chat` now use fallback-based action application flow for better reliability.
+
+### Security
+
+- File writes/deletes remain constrained to project root.
+- Command execution remains limited to safe allowlisted prefixes and blocked shell operators.
+
 ## [1.1.0] - 2026-02-14
 
 ### Added
