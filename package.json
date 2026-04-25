@@ -1,5 +1,5 @@
 {
-  "name": "syambot-cli",
+  "name": "@syamai/syambot-cli",
   "version": "1.2.0",
   "description": "Terminal AI assistant CLI",
   "homepage": "https://github.com/udenbaguse/syambot-cli#readme",

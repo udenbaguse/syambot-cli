@@ -11,3 +11,9 @@ Choose your language:
 
 - Indonesia: [README.id.md](./README.id.md)
 - English: [README.en.md](./README.en.md)
+
+
+## License
+This project is licensed under the ISC License. 
+It also incorporates third-party open-source software; 
+see the [package.json](package.json) for a full list of dependencies.
