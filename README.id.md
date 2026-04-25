@@ -10,7 +10,7 @@ CLI ini sudah menggunakan:
 ## Install
 
 ```bash
-npm i -g github:udenbaguse/syambot-cli
+npm i -g @syamaitech/syambot-cli
 ```
 ```bash
 syambot help
