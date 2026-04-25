@@ -131,15 +131,8 @@ npm run check
 npm run bot -- help
 ```
 
-## Release Flow
+## Bergabung sebagai Kolaborator
 
-1. Update `CHANGELOG.md` sesuai perubahan.
-2. Naikkan versi:
+Lihat panduan lengkap di:
 
-```bash
-npm run release:patch
-# atau
-npm run release:minor
-# atau
-npm run release:major
-```
+- [CONTRIBUTING.id.md](./CONTRIBUTING.id.md)

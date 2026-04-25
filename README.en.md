@@ -131,15 +131,8 @@ npm run check
 npm run bot -- help
 ```
 
-## Release Flow
+## Join as a Collaborator
 
-1. Update `CHANGELOG.md` for the release.
-2. Bump version:
+See the full guide at:
 
-```bash
-npm run release:patch
-# or
-npm run release:minor
-# or
-npm run release:major
-```
+- [CONTRIBUTING.en.md](./CONTRIBUTING.en.md)

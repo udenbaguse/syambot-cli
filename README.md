@@ -12,6 +12,11 @@ Choose your language:
 - Indonesia: [README.id.md](./README.id.md)
 - English: [README.en.md](./README.en.md)
 
+Contribution guide:
+
+- Indonesia: [CONTRIBUTING.id.md](./CONTRIBUTING.id.md)
+- English: [CONTRIBUTING.en.md](./CONTRIBUTING.en.md)
+
 
 ## License
 This project is licensed under the ISC License. 
